@@ -1,1 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de laboratorio</title>
+  <style>
+    :root {
+      --azul: #242B59;
+      --blanco: #ffffff;
+      --rojo: #E1523D;
+      --negro: #252525;
+      --verde: #A4B01D;
+      --gris: #eef1f7;
+    }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--gris);
+      color: var(--negro);
+    }
+
+    header {
+      background: var(--azul);
+      color: var(--blanco);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 64px);
+    }
+
+    nav {
+      background: var(--blanco);
+      border-right: 1px solid #d6d8e0;
+      padding: 1rem;
+    }
+
+    nav h3 {
+      margin: 0 0 .75rem;
+      color: var(--azul);
+      font-size: 1rem;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .nav-btn {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: .75rem .85rem;
+      margin-bottom: .35rem;
+      text-align: left;
+      border-radius: 10px;
+      color: var(--negro);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      background: var(--azul);
+      color: var(--blanco);
+    }
+
+    main {
+      padding: 1.5rem;
+    }
+
+    .section {
+      display: none;
+      animation: fade .2s ease;
+    }
+
+    .section.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--blanco);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 6px 24px rgba(0,0,0,.04);
+      margin-bottom: 1.25rem;
+    }
+
+    .card h2 { margin-top: 0; color: var(--azul); }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    label { font-weight: 600; display: block; margin-bottom: .35rem; }
+    input, select, textarea {
+      width: 100%;
+      padding: .65rem .75rem;
+      border-radius: 10px;
+      border: 1px solid #d6d8e0;
+      background: #fafbff;
+      font-size: 1rem;
+    }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .actions {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    button.primary, .chip {
+      background: var(--azul);
+      color: var(--blanco);
+      border: none;
+      padding: .75rem 1rem;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter .2s;
+    }
+
+    button.secondary {
+      background: #f2f3f8;
+      color: var(--negro);
+      border: 1px solid #d6d8e0;
+      padding: .75rem 1rem;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.primary:hover { filter: brightness(.95); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: .5rem;
+    }
+
+    th, td {
+      padding: .65rem;
+      border-bottom: 1px solid #e7e9f1;
+      text-align: left;
+      font-size: .95rem;
+    }
+
+    th { color: var(--azul); font-size: .9rem; letter-spacing: .4px; }
+
+    .status {
+      padding: .3rem .7rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .85rem;
+      display: inline-block;
+    }
+
+    .status.ok { background: rgba(164,176,29,.15); color: var(--verde); }
+    .status.warn { background: rgba(225,82,61,.12); color: var(--rojo); }
+
+    .pill {
+      background: rgba(36,43,89,.08);
+      color: var(--azul);
+      padding: .3rem .7rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .85rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: var(--azul);
+      color: var(--blanco);
+      padding: .85rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.2);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .2s, transform .2s;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .flex {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      background: #f8f9fd;
+      padding: .65rem .85rem;
+      border-radius: 12px;
+      border: 1px solid #e2e5f0;
+      display: flex;
+      gap: .6rem;
+      align-items: center;
+    }
+
+    .badge {
+      border-radius: 8px;
+      padding: .35rem .6rem;
+      font-weight: 700;
+      color: var(--blanco);
+    }
+
+    .badge.pending { background: var(--rojo); }
+    .badge.ready { background: var(--verde); color: var(--negro); }
+
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(36,43,89,.92), rgba(36,43,89,.85)), url('https://images.unsplash.com/photo-1581093588401-99fa7b6a1c4c?auto=format&fit=crop&w=1600&q=80');
+      background-size: cover;
+      color: var(--blanco);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 30;
+    }
+
+    .login-card {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 1.75rem;
+      border-radius: 18px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 12px 36px rgba(0,0,0,.25);
+      backdrop-filter: blur(12px);
+    }
+
+    .login-card h2 {
+      margin-top: 0;
+      margin-bottom: .35rem;
+    }
+
+    .helper { color: rgba(255,255,255,.85); font-size: .95rem; }
+
+    .user-chip {
+      background: rgba(255,255,255,.16);
+      padding: .55rem .8rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      color: var(--blanco);
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { display: none; }
+      nav.open { display: block; }
+      .menu-toggle { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+    }
+
+    @media (min-width: 961px) {
+      .menu-toggle { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <h2>Ingreso</h2>
+      <p class="helper">Usa tu correo registrado. Ejemplo: <strong>preparador@demo.com</strong> o <strong>docente@demo.com</strong>.</p>
+      <form onsubmit="iniciarSesion(event)">
+        <label for="login-email">Correo institucional</label>
+        <input id="login-email" type="email" placeholder="tu@colegio.edu" required />
+        <div class="actions" style="margin-top:1rem;">
+          <button class="primary" type="submit">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <header class="hidden" id="app-header">
+    <div class="brand">
+      <div style="width:32px;height:32px;border-radius:10px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:800;">GL</div>
+      <div>
+        <div>Gestión de laboratorio</div>
+        <small style="opacity:.8">Inventario + prácticas</small>
+      </div>
+    </div>
+    <div class="menu-toggle" onclick="toggleMenu()">
+      <span style="font-size:1.2rem;">☰</span> Menú
+    </div>
+    <div id="user-pill" class="user-chip hidden"></div>
+  </header>
+  <div class="layout hidden" id="app-shell">
+    <nav id="sidebar">
+      <h3>Panel</h3>
+      <button class="nav-btn active" data-roles="Preparador,Docente" onclick="setView('inventario')">Inventario</button>
+      <button class="nav-btn" data-roles="Preparador" onclick="setView('formulario')">Alta / edición</button>
+      <button class="nav-btn" data-roles="Preparador" onclick="setView('bitacora')">Bitácora</button>
+      <button class="nav-btn" data-roles="Docente" onclick="setView('solicitar')">Solicitar práctica</button>
+      <button class="nav-btn" data-roles="Preparador" onclick="setView('solicitudes')">Solicitudes recibidas</button>
+    </nav>
+    <main>
+      <section id="inventario" class="section active">
+        <div class="card">
+          <div class="flex" style="justify-content: space-between; align-items: center;">
+            <h2>Inventario actualizado</h2>
+            <div class="search-box">
+              <input id="search" type="text" placeholder="Buscar por nombre o categoría" oninput="renderInventario()" />
+            </div>
+          </div>
+          <div class="grid-two" id="resumen"></div>
+          <div style="overflow-x:auto;">
+            <table id="tabla-inventario">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cantidad</th>
+                  <th>Estado</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th>Foto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="formulario" class="section">
+        <div class="card">
+          <h2>Alta y actualización de equipo</h2>
+          <form id="inventario-form" onsubmit="guardarInventario(event)">
+            <input type="hidden" id="row" />
+            <div class="grid-two">
+              <div>
+                <label>Nombre</label>
+                <input id="nombre" required />
+              </div>
+              <div>
+                <label>Cantidad</label>
+                <input id="cantidad" type="number" min="0" required />
+              </div>
+              <div>
+                <label>Estado</label>
+                <select id="estado" required>
+                  <option>En funcionamiento</option>
+                  <option>En reparación</option>
+                </select>
+              </div>
+              <div>
+                <label>Categoría</label>
+                <select id="categoria" required>
+                  <option>Mecánica</option>
+                  <option>Electromagnetismo</option>
+                  <option>Termodinámica</option>
+                  <option>Otros</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label>Descripción</label>
+              <textarea id="descripcion" placeholder="Notas, ubicación, accesorios..."></textarea>
+            </div>
+            <div class="grid-two">
+              <div>
+                <label>Foto (opcional)</label>
+                <input id="foto" type="file" accept="image/*" capture="environment" />
+              </div>
+              <div id="preview"></div>
+            </div>
+            <div class="actions">
+              <button type="submit" class="primary">Guardar</button>
+              <button type="button" class="secondary" onclick="resetForm()">Limpiar</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="bitacora" class="section">
+        <div class="card">
+          <h2>Bitácora del preparador</h2>
+          <form id="bitacora-form" onsubmit="guardarBitacora(event)">
+            <div class="grid-two">
+              <div>
+                <label>Preparador</label>
+                <input id="b-preparador" required />
+              </div>
+              <div>
+                <label>Fecha</label>
+                <input id="b-fecha" type="date" />
+              </div>
+            </div>
+            <div>
+              <label>Actividad</label>
+              <textarea id="b-actividad" required></textarea>
+            </div>
+            <div class="grid-two">
+              <div>
+                <label>Elementos preparados</label>
+                <input id="b-elementos" list="materiales" placeholder="Ej: osciloscopio, cables" />
+              </div>
+              <div>
+                <label>Para (curso/usuario)</label>
+                <input id="b-solicitante" />
+              </div>
+            </div>
+            <div class="actions">
+              <button class="primary" type="submit">Registrar</button>
+              <button class="secondary" type="reset">Limpiar</button>
+            </div>
+          </form>
+          <div class="actions" style="margin-top:1.2rem;align-items:flex-end;">
+            <div style="flex:1;min-width:240px;">
+              <label>Importar bitácora (CSV)</label>
+              <input type="file" id="bitacora-csv" accept="text/csv" onchange="subirCsvBitacora(event)" />
+            </div>
+            <button class="secondary" type="button" onclick="descargarCsvBitacora()">Descargar CSV</button>
+          </div>
+          <div style="margin-top:1rem; overflow-x:auto;">
+            <table id="tabla-bitacora">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Preparador</th>
+                  <th>Actividad</th>
+                  <th>Elementos</th>
+                  <th>Solicitante</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="solicitar" class="section">
+        <div class="card">
+          <h2>Solicitud de práctica (rol docente)</h2>
+          <form id="solicitud-form" onsubmit="enviarSolicitud(event)">
+            <div class="grid-two">
+              <div>
+                <label>Docente</label>
+                <input id="s-docente" required />
+              </div>
+              <div>
+                <label>Fecha de inicio</label>
+                <input id="s-inicio" type="date" required />
+              </div>
+              <div>
+                <label>Fecha de devolución</label>
+                <input id="s-fin" type="date" required />
+              </div>
+            </div>
+            <div>
+              <label>Materiales requeridos</label>
+              <textarea id="s-elementos" list="materiales" placeholder="Busca y separa por coma"></textarea>
+            </div>
+            <div>
+              <label>Extras / notas</label>
+              <textarea id="s-extras" placeholder="Observaciones o elementos adicionales"></textarea>
+            </div>
+            <div class="actions">
+              <button class="primary" type="submit">Enviar solicitud</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="solicitudes" class="section">
+        <div class="card">
+          <h2>Solicitudes pendientes</h2>
+          <div style="overflow-x:auto;">
+            <table id="tabla-solicitudes">
+              <thead>
+                <tr>
+                  <th>Docente</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th>Elementos</th>
+                  <th>Extras</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <datalist id="materiales"></datalist>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let inventario = [];
+    let solicitudes = [];
+    let bitacora = [];
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('login-email').focus();
+    });
+
+    function iniciarSesion(event) {
+      event.preventDefault();
+      const email = document.getElementById('login-email').value;
+      google.script.run.withSuccessHandler(user => {
+        currentUser = user;
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-header').classList.remove('hidden');
+        document.getElementById('app-shell').classList.remove('hidden');
+        const pill = document.getElementById('user-pill');
+        pill.textContent = `${user.nombre || user.email} · ${user.rol}`;
+        pill.classList.remove('hidden');
+        setRoleUI();
+        prefijarCamposPorRol();
+        setView('inventario');
+        cargarInventario();
+      }).withFailureHandler(err => showToast(err.message || 'No se pudo iniciar sesión')).login(email);
+    }
+
+    function prefijarCamposPorRol() {
+      if (currentUser?.rol === 'Preparador') {
+        document.getElementById('b-preparador').value = currentUser.nombre || currentUser.email;
+        cargarBitacora();
+        cargarSolicitudes();
+      }
+      if (currentUser?.rol === 'Docente') {
+        document.getElementById('s-docente').value = currentUser.nombre || currentUser.email;
+      }
+    }
+
+    function setRoleUI() {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const roles = (btn.dataset.roles || '').split(',').map(r => r.trim());
+        const allowed = roles.includes(currentUser?.rol);
+        btn.classList.toggle('hidden', !allowed);
+      });
+      const visibleBtn = document.querySelector('.nav-btn:not(.hidden)');
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      if (visibleBtn) {
+        visibleBtn.classList.add('active');
+        const match = visibleBtn.getAttribute('onclick').match(/'([^']+)'/);
+        if (match) {
+          document.getElementById(match[1]).classList.add('active');
+        }
+      }
+    }
+
+    function toggleMenu() {
+      const nav = document.getElementById('sidebar');
+      nav.classList.toggle('open');
+    }
+
+    function setView(id) {
+      if (!currentUser) return;
+      const navBtn = document.querySelector(`button[onclick="setView('${id}')"]`);
+      if (navBtn && navBtn.classList.contains('hidden')) {
+        showToast('No tienes acceso a esta sección');
+        return;
+      }
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      if (navBtn) navBtn.classList.add('active');
+      const section = document.getElementById(id);
+      if (section) section.classList.add('active');
+      if (id === 'inventario') cargarInventario();
+      if (id === 'bitacora' && currentUser?.rol === 'Preparador') cargarBitacora();
+      if (id === 'solicitudes' && currentUser?.rol === 'Preparador') cargarSolicitudes();
+    }
+
+    function cargarInventario() {
+      google.script.run.withSuccessHandler(data => {
+        inventario = data || [];
+        renderInventario();
+        poblarMateriales();
+      }).getInventory();
+    }
+
+    function renderInventario() {
+      const term = (document.getElementById('search').value || '').toLowerCase();
+      const tbody = document.querySelector('#tabla-inventario tbody');
+      tbody.innerHTML = '';
+      const filtrados = inventario.filter(item =>
+        item.nombre?.toLowerCase().includes(term) || item.categoria?.toLowerCase().includes(term)
+      );
+      const puedeEditar = currentUser?.rol === 'Preparador';
+      filtrados.forEach(item => {
+        const tr = document.createElement('tr');
+        const acciones = puedeEditar ? `<button class="secondary" onclick='editar(${JSON.stringify(item)})'>Editar</button>` : '-';
+        tr.innerHTML = `
+          <td>${item.nombre || ''}</td>
+          <td>${item.cantidad || 0}</td>
+          <td><span class="status ${item.estado === 'En reparación' ? 'warn' : 'ok'}">${item.estado || ''}</span></td>
+          <td><span class="pill">${item.categoria || ''}</span></td>
+          <td>${item.descripcion || ''}</td>
+          <td>${item.foto ? `<a href="${item.foto}" target="_blank">Ver</a>` : '-'}</td>
+          <td>${acciones}</td>`;
+        tbody.appendChild(tr);
+      });
+      renderResumen();
+    }
+
+    function renderResumen() {
+      const resumen = document.getElementById('resumen');
+      const total = inventario.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0);
+      const enReparacion = inventario.filter(it => it.estado === 'En reparación').length;
+      const categorias = ['Mecánica','Electromagnetismo','Termodinámica','Otros'];
+      resumen.innerHTML = `
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:2rem;font-weight:800;">${total}</div>
+          <div>Total de unidades</div>
+        </div>
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:2rem;font-weight:800;color:var(--rojo);">${enReparacion}</div>
+          <div>Equipos en reparación</div>
+        </div>
+        ${categorias.map(cat => `<div class="card" style="padding:1rem;">
+          <div style="font-size:1.6rem;font-weight:800;">${inventario.filter(it => it.categoria === cat).length}</div>
+          <div>${cat}</div>
+        </div>`).join('')}`;
+    }
+
+    function poblarMateriales() {
+      const list = document.getElementById('materiales');
+      list.innerHTML = inventario.map(it => `<option value="${it.nombre}"></option>`).join('');
+    }
+
+    function fileToBase64(file, cb) {
+      const reader = new FileReader();
+      reader.onload = () => cb(reader.result);
+      reader.readAsDataURL(file);
+    }
+
+    function guardarInventario(e) {
+      e.preventDefault();
+      if (currentUser?.rol !== 'Preparador') {
+        showToast('Solo el preparador puede modificar el inventario');
+        return;
+      }
+      const file = document.getElementById('foto').files[0];
+      const payload = {
+        row: document.getElementById('row').value || null,
+        nombre: document.getElementById('nombre').value,
+        cantidad: document.getElementById('cantidad').value,
+        estado: document.getElementById('estado').value,
+        categoria: document.getElementById('categoria').value,
+        descripcion: document.getElementById('descripcion').value,
+        foto: null
+      };
+      const send = (photoData) => {
+        payload.photoData = photoData || null;
+        google.script.run.withSuccessHandler(res => {
+          showToast(res.message || 'Guardado');
+          resetForm();
+          cargarInventario();
+        }).withFailureHandler(err => showToast(err.message || 'Error')).saveInventoryItem(payload);
+      };
+      if (file) {
+        fileToBase64(file, send);
+      } else {
+        send(null);
+      }
+    }
+
+    function editar(item) {
+      setView('formulario');
+      document.getElementById('row').value = item.row;
+      document.getElementById('nombre').value = item.nombre || '';
+      document.getElementById('cantidad').value = item.cantidad || 0;
+      document.getElementById('estado').value = item.estado || 'En funcionamiento';
+      document.getElementById('categoria').value = item.categoria || 'Otros';
+      document.getElementById('descripcion').value = item.descripcion || '';
+      document.getElementById('preview').innerHTML = item.foto ? `<a href="${item.foto}" target="_blank">Foto actual</a>` : '';
+    }
+
+    function resetForm() {
+      document.getElementById('inventario-form').reset();
+      document.getElementById('row').value = '';
+      document.getElementById('preview').innerHTML = '';
+    }
+
+    function guardarBitacora(e) {
+      e.preventDefault();
+      if (currentUser?.rol !== 'Preparador') {
+        showToast('Solo el preparador puede registrar la bitácora');
+        return;
+      }
+      const payload = {
+        preparador: document.getElementById('b-preparador').value || currentUser?.nombre,
+        fecha: document.getElementById('b-fecha').value,
+        actividad: document.getElementById('b-actividad').value,
+        elementos: document.getElementById('b-elementos').value,
+        solicitante: document.getElementById('b-solicitante').value
+      };
+      google.script.run.withSuccessHandler(msg => {
+        showToast(msg);
+        document.getElementById('bitacora-form').reset();
+        prefijarCamposPorRol();
+        cargarBitacora();
+      }).withFailureHandler(err => showToast(err.message || 'Error')).addLogEntry(payload);
+    }
+
+    function subirCsvBitacora(event) {
+      if (currentUser?.rol !== 'Preparador') {
+        showToast('Solo el preparador puede importar la bitácora');
+        return;
+      }
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        google.script.run.withSuccessHandler(msg => {
+          showToast(msg);
+          cargarBitacora();
+        }).withFailureHandler(err => showToast(err.message || 'No se pudo importar')).importLogbookCsv(e.target.result);
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function descargarCsvBitacora() {
+      if (currentUser?.rol !== 'Preparador') {
+        showToast('Solo el preparador puede exportar la bitácora');
+        return;
+      }
+      google.script.run.withSuccessHandler(csv => {
+        if (!csv) {
+          showToast('La bitácora está vacía');
+          return;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'bitacora.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      }).withFailureHandler(err => showToast(err.message || 'No se pudo descargar')).exportLogbookCsv();
+    }
+
+    function cargarBitacora() {
+      google.script.run.withSuccessHandler(data => {
+        bitacora = data || [];
+        const tbody = document.querySelector('#tabla-bitacora tbody');
+        tbody.innerHTML = '';
+        bitacora.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.fecha ? new Date(row.fecha).toLocaleDateString() : ''}</td>
+            <td>${row.preparador || ''}</td>
+            <td>${row.actividad || ''}</td>
+            <td>${row.elementos || ''}</td>
+            <td>${row.solicitante || ''}</td>`;
+          tbody.appendChild(tr);
+        });
+      }).getLogEntries();
+    }
+
+    function enviarSolicitud(e) {
+      e.preventDefault();
+      const payload = {
+        docente: document.getElementById('s-docente').value,
+        inicio: document.getElementById('s-inicio').value,
+        fin: document.getElementById('s-fin').value,
+        elementos: document.getElementById('s-elementos').value,
+        extras: document.getElementById('s-extras').value
+      };
+      google.script.run.withSuccessHandler(msg => {
+        showToast(msg);
+        document.getElementById('solicitud-form').reset();
+        prefijarCamposPorRol();
+        if (currentUser?.rol === 'Preparador') cargarSolicitudes();
+      }).withFailureHandler(err => showToast(err.message || 'Error')).submitRequest(payload);
+    }
+
+    function cargarSolicitudes() {
+      google.script.run.withSuccessHandler(data => {
+        solicitudes = data || [];
+        const tbody = document.querySelector('#tabla-solicitudes tbody');
+        tbody.innerHTML = '';
+        solicitudes.forEach(sol => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${sol.docente || ''}</td>
+            <td>${sol.inicio ? new Date(sol.inicio).toLocaleDateString() : ''}</td>
+            <td>${sol.fin ? new Date(sol.fin).toLocaleDateString() : ''}</td>
+            <td>${sol.elementos || ''}</td>
+            <td>${sol.extras || ''}</td>
+            <td><span class="badge ${sol.estado === 'Preparado' ? 'ready' : 'pending'}">${sol.estado || 'Pendiente'}</span></td>
+            <td>${renderSolicitudAcciones(sol)}</td>`;
+          tbody.appendChild(tr);
+        });
+      }).getRequests();
+    }
+
+    function renderSolicitudAcciones(sol) {
+      if (sol.estado === 'Preparado') {
+        return sol.fotoEntrega ? `<a href="${sol.fotoEntrega}" target="_blank">Foto</a>` : 'Listo';
+      }
+      if (currentUser?.rol !== 'Preparador') return '-';
+      const nombrePrep = currentUser?.nombre || '';
+      return `<div class="actions">
+        <input type="file" accept="image/*" capture="environment" onchange="prepararSolicitud(event, ${sol.row})" />
+        <input type="text" placeholder="Preparador" style="max-width:140px" id="prep-${sol.row}" value="${nombrePrep}" />
+      </div>`;
+    }
+
+    function prepararSolicitud(event, row) {
+      const file = event.target.files[0];
+      const preparador = document.getElementById(`prep-${row}`)?.value || currentUser?.nombre || '';
+      if (!file) return;
+      fileToBase64(file, (photo) => {
+        google.script.run.withSuccessHandler(msg => {
+          showToast(msg);
+          cargarSolicitudes();
+        }).withFailureHandler(err => showToast(err.message || 'Error')).markRequestPrepared({ row, photoData: photo, preparador});
+      });
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+  </script></script>
+</body>
+</html>
